@@ -7,6 +7,9 @@ Restaurant website project. The goal is a polished, responsive website for a mod
 ## Working Rules
 
 - Keep changes scoped to this `restaurant` folder.
+- Work in this order: spec -> plan -> code.
+- If a requested change is not described in the specs, update or clarify the specs before coding.
+- If a requested change contradicts the specs, stop and resolve the contradiction first.
 - Prefer simple static HTML, CSS, and JavaScript unless the user asks for a framework.
 - Use semantic HTML and accessible controls.
 - Keep the first screen as the real usable restaurant page, not a marketing placeholder.
@@ -29,6 +32,11 @@ Restaurant website project. The goal is a polished, responsive website for a mod
 - `script.js` - lightweight interactions.
 - `assets/` - images, icons, and other static media.
 - `SPEC.md` - product direction and content requirements.
+- `docs/functional-map.md` - user capabilities and main paths.
+- `docs/feature-specs/` - one feature per spec.
+- `docs/technical-spec.md` - architecture, stack, technical constraints.
+- `docs/visual-rules.md` - design rules and UI direction.
+- `docs/user-stories.md` - user stories and path checks.
 - `TASKS.md` - implementation checklist.
 
 ## Verification
@@ -36,6 +44,7 @@ Restaurant website project. The goal is a polished, responsive website for a mod
 Before finishing meaningful changes:
 
 - Open or inspect `index.html` for broken paths.
+- Check that the change matches `SPEC.md` and the relevant file in `docs/`.
 - Check mobile breakpoints in CSS when layout changes.
 - Keep JavaScript resilient if elements are missing.
 - If adding dependencies later, document install and run commands in `README.md`.
