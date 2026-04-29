@@ -1,15 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { deliveryRules, menuCategories, menuItems, type MenuCategoryId } from "@/data/menu";
 
 type Cart = Record<string, number>;
+type PageVariant = "photo";
+
+type RestaurantPageProps = {
+  variant?: PageVariant;
+};
+
+const variantLabels: Record<PageVariant, string> = {
+  photo: "Синтем · Грозный",
+};
 
 const navLinks = [
   { href: "#menu", label: "Меню" },
   { href: "#booking", label: "Бронь" },
-  { href: "#events", label: "События" },
-  { href: "#delivery", label: "Доставка" },
+  { href: "#delivery", label: "Заказ" },
   { href: "#contacts", label: "Контакты" },
 ];
 
@@ -19,11 +28,13 @@ function formatPrice(value: number) {
   return `${rub.format(value)} ₽`;
 }
 
-export function RestaurantPage() {
+export function RestaurantPage({ variant = "photo" }: RestaurantPageProps) {
   const [activeCategory, setActiveCategory] = useState<MenuCategoryId>("popular");
   const [cart, setCart] = useState<Cart>({});
+  const [addedItemId, setAddedItemId] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
   const [deliveryStatus, setDeliveryStatus] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const savedCart = window.localStorage.getItem("restaurant-cart");
@@ -62,10 +73,24 @@ export function RestaurantPage() {
       : 0;
   const total = subtotal + deliveryFee;
   const canOrder = subtotal >= deliveryRules.minimumOrder;
+  const cartCount = cartItems.reduce((sum, entry) => sum + entry!.quantity, 0);
 
   function addToCart(id: string) {
     setCart((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
+    setAddedItemId(id);
   }
+
+  useEffect(() => {
+    if (!addedItemId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setAddedItemId("");
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [addedItemId]);
 
   function updateQuantity(id: string, quantity: number) {
     setCart((current) => {
@@ -81,7 +106,7 @@ export function RestaurantPage() {
 
   function handleBookingSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBookingStatus("Заявка подготовлена. После подключения Telegram администратор получит ее автоматически.");
+    setBookingStatus("Заявка подготовлена. После подключения Telegram администратор получит ее и свяжется для подтверждения.");
   }
 
   function handleDeliverySubmit(event: FormEvent<HTMLFormElement>) {
@@ -94,10 +119,10 @@ export function RestaurantPage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className={`page-shell variant-${variant}`}>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="На главную">
-          Ресторан
+          Синтем
         </a>
         <nav className="site-nav" aria-label="Основная навигация">
           {navLinks.map((link) => (
@@ -106,18 +131,43 @@ export function RestaurantPage() {
             </a>
           ))}
         </nav>
-        <a className="header-action" href="#booking">
-          Забронировать
-        </a>
+        <div className="header-actions">
+          <a className="cart-link" href="#delivery" aria-label={`Корзина, позиций: ${cartCount}`}>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M6.2 7.5h12.5l-1.1 7.2a2 2 0 0 1-2 1.7H9.2a2 2 0 0 1-2-1.6L5.8 4.9H3.6" />
+              <path d="M9.4 20h.1M16.1 20h.1" />
+            </svg>
+            <span>{cartCount}</span>
+          </a>
+          <button
+            aria-controls="mobile-menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-label="Открыть меню"
+            className="menu-toggle"
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+            type="button"
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+        <div className="mobile-menu" hidden={!isMobileMenuOpen} id="mobile-menu">
+          {navLinks.map((link) => (
+            <a key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)}>
+              {link.label}
+            </a>
+          ))}
+        </div>
       </header>
 
       <section className="hero" id="top">
         <div className="hero-content">
-          <p className="eyebrow">Грозный · современная национальная кухня</p>
-          <h1>Теплый ресторан для ужинов, встреч и семейных событий</h1>
+          <p className="eyebrow">{variantLabels[variant]}</p>
+          <h1>Современная чеченская кухня в Грозном</h1>
           <p>
-            Чеченские традиции, авторская подача и понятный городской формат: можно спокойно
-            посмотреть меню, оставить заявку на стол или собрать доставку.
+            Национальные блюда в спокойной ресторанной подаче: галнаш, лепешки,
+            горячее и знакомый вкус в современном городском ресторане.
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#menu">
@@ -131,31 +181,7 @@ export function RestaurantPage() {
         <div className="hero-media" aria-label="Блюда современной национальной кухни" />
       </section>
 
-      <section className="intro-strip" aria-label="Ключевая информация">
-        <div>
-          <span>Кухня</span>
-          <strong>чеченская, европейская, азиатская</strong>
-        </div>
-        <div>
-          <span>Форматы</span>
-          <strong>ужин, семья, встреча, банкет</strong>
-        </div>
-        <div>
-          <span>Доставка</span>
-          <strong>от 500 ₽, бесплатно от 1000 ₽</strong>
-        </div>
-      </section>
-
       <section className="section menu-section" id="menu">
-        <div className="section-heading">
-          <p className="eyebrow">Меню</p>
-          <h2>Основные блюда и категории</h2>
-          <p>
-            Тестовое меню взято из спецификации и должно быть заменено на утвержденное меню
-            ресторана перед публикацией.
-          </p>
-        </div>
-
         <div className="category-tabs" aria-label="Категории меню">
           {menuCategories.map((category) => (
             <button
@@ -173,16 +199,22 @@ export function RestaurantPage() {
         <div className="menu-grid">
           {visibleItems.map((item) => (
             <article className="menu-card" key={item.id}>
+              <Link className="menu-card-link" href={`/menu/${item.id}`} aria-label={`Открыть блюдо ${item.name}`} />
               <img alt="" src={item.image} />
               <div>
                 <div className="menu-card-title">
                   <h3>{item.name}</h3>
-                  <strong>{formatPrice(item.price)}</strong>
                 </div>
-                <p>{item.description}</p>
-                <button className="text-button" onClick={() => addToCart(item.id)} type="button">
-                  Добавить в доставку
-                </button>
+                <div className="menu-card-footer">
+                  <strong>{formatPrice(item.price)}</strong>
+                  <button
+                    className={`text-button ${addedItemId === item.id ? "is-added" : ""}`}
+                    onClick={() => addToCart(item.id)}
+                    type="button"
+                  >
+                    {addedItemId === item.id ? "Добавлено" : "Добавить"}
+                  </button>
+                </div>
               </div>
             </article>
           ))}
@@ -191,12 +223,7 @@ export function RestaurantPage() {
 
       <section className="section split-section" id="booking">
         <div className="section-heading">
-          <p className="eyebrow">Бронирование</p>
-          <h2>Заявка с подтверждением администратора</h2>
-          <p>
-            Сайт не обещает автоматическую бронь. Гость оставляет данные, а администратор
-            связывается и подтверждает возможность посадки.
-          </p>
+          <h2>Бронь стола</h2>
         </div>
         <form className="form-panel" onSubmit={handleBookingSubmit}>
           <label>
@@ -219,11 +246,11 @@ export function RestaurantPage() {
           </div>
           <label>
             Гостей
-            <input min="1" name="guests" required type="number" />
+            <input max="6" min="1" name="guests" required type="number" />
           </label>
           <label>
             Комментарий
-            <textarea name="comment" rows={4} />
+            <textarea name="comment" rows={3} />
           </label>
           <button className="button button-primary" type="submit">
             Отправить заявку
@@ -232,32 +259,7 @@ export function RestaurantPage() {
         </form>
       </section>
 
-      <section className="section events-section" id="events">
-        <div className="section-heading">
-          <p className="eyebrow">События</p>
-          <h2>Семейные вечера, встречи и закрытые форматы</h2>
-        </div>
-        <div className="event-grid">
-          {["Семейный ужин", "Бизнес-встреча", "Банкет или закрытый ужин"].map((title) => (
-            <article className="event-card" key={title}>
-              <h3>{title}</h3>
-              <p>Формат обсуждается с администратором после заявки, без обещания свободных дат.</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <section className="section delivery-section" id="delivery">
-        <div className="section-heading">
-          <p className="eyebrow">Доставка</p>
-          <h2>Корзина для заказа домой или в офис</h2>
-          <p>
-            Минимальная сумма заказа {formatPrice(deliveryRules.minimumOrder)}. Доставка
-            {` ${formatPrice(deliveryRules.deliveryFee)} до ${formatPrice(
-              deliveryRules.paidDeliveryLimit - 1,
-            )}`}, бесплатно от {formatPrice(deliveryRules.paidDeliveryLimit)}.
-          </p>
-        </div>
         <div className="delivery-layout">
           <div className="cart-panel">
             <h3>Корзина</h3>
@@ -282,7 +284,7 @@ export function RestaurantPage() {
                 ))}
               </div>
             ) : (
-              <p className="muted">Добавьте блюда из меню, чтобы проверить доставку.</p>
+              <p className="muted">Корзина пуста</p>
             )}
             <div className="cart-total">
               <span>Блюда</span>
@@ -311,11 +313,11 @@ export function RestaurantPage() {
               <input name="address" required />
             </label>
             <label>
-              Комментарий
-              <textarea name="delivery-comment" rows={4} />
+              Комментарий к заказу
+              <textarea name="delivery-comment" rows={3} />
             </label>
             <button className="button button-primary" disabled={!canOrder} type="submit">
-              Подготовить заказ
+              Оформить заказ
             </button>
             {deliveryStatus ? <p className="form-status">{deliveryStatus}</p> : null}
           </form>
@@ -325,13 +327,23 @@ export function RestaurantPage() {
       <footer className="site-footer" id="contacts">
         <div>
           <p className="eyebrow">Контакты</p>
-          <h2>Грозный</h2>
+          <h2>Синтем · Грозный</h2>
           <p>Точный адрес, телефон, часы работы и соцсети нужно заменить на реальные данные перед публикацией.</p>
         </div>
         <a className="button button-secondary" href="#booking">
           Связаться через заявку
         </a>
       </footer>
+
+      <a className="mobile-cart-bar" href="#delivery" aria-label={`Открыть корзину, позиций: ${cartCount}`}>
+        <span className="mobile-cart-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M6.2 7.5h12.5l-1.1 7.2a2 2 0 0 1-2 1.7H9.2a2 2 0 0 1-2-1.6L5.8 4.9H3.6" />
+            <path d="M9.4 20h.1M16.1 20h.1" />
+          </svg>
+        </span>
+        <span>{cartCount ? formatPrice(total) : "Корзина"}</span>
+      </a>
     </main>
   );
 }
